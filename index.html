@@ -8,7 +8,12 @@
 </head>
 <body class="bg-gray-100 p-8">
   <div class="max-w-6xl mx-auto space-y-8">
-    <h1 class="text-3xl font-bold text-gray-800 border-b pb-4">Hotel & Restaurant Management System</h1>
+    <div class="flex justify-between items-center border-b pb-4">
+      <h1 class="text-3xl font-bold text-gray-800">Hotel & Restaurant Management System</h1>
+      <div id="auth-status" class="flex items-center gap-3">
+        <button onclick="toggleAuthModal()" id="auth-btn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold text-sm">Staff Login</button>
+      </div>
+    </div>
 
     <!-- 1. ROOM STATUS GRID -->
     <div class="bg-white p-6 rounded-xl shadow-md">
@@ -76,9 +81,93 @@
     </div>
   </div>
 
+  <!-- AUTHENTICATION MODAL -->
+  <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+      <h3 class="text-xl font-bold text-gray-800 mb-4">Staff Authentication</h3>
+      <div class="space-y-4">
+        <input id="login_email" type="email" placeholder="Email (manager@hotel.com)" class="w-full border p-2 rounded">
+        <input id="login_password" type="password" placeholder="Password" class="w-full border p-2 rounded">
+        <button onclick="performLogin()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-semibold">Log In</button>
+        <button onclick="toggleAuthModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300 font-semibold">Cancel</button>
+        <p id="login-msg" class="text-xs font-bold text-center mt-2"></p>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const API_URL = 'http://localhost:5000/api';
+    // Update API_URL to your production server on Render once deployed
+    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:5000/api'
+      : 'https://restaurant-system-xyz.onrender.com/api'; // Replace with actual Render service URL
+
     let cart = [];
+
+    // Helper to send Bearer token in headers for protected routes
+    async function fetchAuth(url, options = {}) {
+      const token = localStorage.getItem('jwt_token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      return fetch(url, { ...options, headers });
+    }
+
+    function toggleAuthModal() {
+      document.getElementById('auth-modal').classList.toggle('hidden');
+    }
+
+    function updateAuthUI() {
+      const token = localStorage.getItem('jwt_token');
+      const authBtn = document.getElementById('auth-btn');
+      if (token) {
+        authBtn.className = "bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 font-semibold text-sm";
+        authBtn.innerText = "Log Out";
+        authBtn.onclick = performLogout;
+      } else {
+        authBtn.className = "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold text-sm";
+        authBtn.innerText = "Staff Login";
+        authBtn.onclick = toggleAuthModal;
+      }
+    }
+
+    async function performLogin() {
+      const email = document.getElementById('login_email').value;
+      const password = document.getElementById('login_password').value;
+      const msg = document.getElementById('login-msg');
+
+      try {
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          localStorage.setItem('jwt_token', data.token);
+          msg.className = "text-xs font-bold text-green-600 text-center mt-2";
+          msg.innerText = "Login successful!";
+          setTimeout(() => {
+            toggleAuthModal();
+            updateAuthUI();
+          }, 500);
+        } else {
+          msg.className = "text-xs font-bold text-red-600 text-center mt-2";
+          msg.innerText = data.error || data.message || "Invalid credentials.";
+        }
+      } catch (err) {
+        msg.className = "text-xs font-bold text-red-600 text-center mt-2";
+        msg.innerText = "Connection error.";
+      }
+    }
+
+    function performLogout() {
+      localStorage.removeItem('jwt_token');
+      updateAuthUI();
+    }
 
     async function fetchRooms() {
       try {
@@ -181,9 +270,8 @@
       };
 
       try {
-        const res = await fetch(`${API_URL}/orders`, {
+        const res = await fetchAuth(`${API_URL}/orders`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
@@ -195,7 +283,7 @@
           renderCart();
         } else {
           msg.className = "text-xs font-bold text-red-600 mt-1";
-          msg.innerText = data.error || "Order submission failed.";
+          msg.innerText = data.error || data.message || "Order submission failed.";
         }
       } catch (err) {
         msg.className = "text-xs font-bold text-red-600 mt-1";
@@ -206,18 +294,24 @@
     async function fetchCheckoutBill() {
       const customerId = document.getElementById('customerIdInput').value || 1;
       try {
-        const res = await fetch(`${API_URL}/checkout/${customerId}`);
+        const res = await fetchAuth(`${API_URL}/checkout/${customerId}`);
         const data = await res.json();
         
+        if (!res.ok) {
+          document.getElementById('bill-result').innerHTML = `<p class="text-red-600 font-bold">${data.message || data.error || 'Failed to fetch bill details.'}</p>`;
+          return;
+        }
+
         document.getElementById('co_customer_id').value = data.customer_id;
-        document.getElementById('co_amount').value = data.grand_total.toFixed(2);
+        document.getElementById('co_booking_id').value = data.booking_id || '';
+        document.getElementById('co_amount').value = data.grand_total ? data.grand_total.toFixed(2) : '0.00';
 
         document.getElementById('bill-result').innerHTML = `
           <p>Customer ID: <strong>${data.customer_id}</strong></p>
-          <p>Room Stay Subtotal: $${data.room_total.toFixed(2)}</p>
-          <p>Dining Subtotal: $${data.dining_total.toFixed(2)}</p>
+          <p>Room Stay Subtotal: $${(data.room_total || 0).toFixed(2)}</p>
+          <p>Dining Subtotal: $${(data.dining_total || 0).toFixed(2)}</p>
           <hr class="my-2">
-          <p class="text-lg font-bold text-black">Grand Total Due: $${data.grand_total.toFixed(2)}</p>
+          <p class="text-lg font-bold text-black">Grand Total Due: $${(data.grand_total || 0).toFixed(2)}</p>
         `;
       } catch (err) {
         console.error('Error fetching bill:', err);
@@ -239,9 +333,8 @@
       }
 
       try {
-        const res = await fetch(`${API_URL}/checkout`, {
+        const res = await fetchAuth(`${API_URL}/checkout`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ customer_id, booking_id, amount_paid, payment_method })
         });
 
@@ -249,11 +342,11 @@
 
         if (res.ok) {
           msgEl.className = "mt-2 text-sm font-bold text-green-600";
-          msgEl.innerText = data.message;
+          msgEl.innerText = data.message || 'Check-out completed successfully.';
           fetchRooms();
         } else {
           msgEl.className = "mt-2 text-sm font-bold text-red-600";
-          msgEl.innerText = data.error || 'Check-out failed.';
+          msgEl.innerText = data.error || data.message || 'Check-out failed.';
         }
       } catch (err) {
         msgEl.className = "mt-2 text-sm font-bold text-red-600";
@@ -261,6 +354,8 @@
       }
     }
 
+    // Initialize UI and data loads
+    updateAuthUI();
     fetchRooms();
     fetchMenu();
   </script>
