@@ -12,6 +12,7 @@
         /* Change this filename to replace the main dashboard background. */
         --manager-background-image: url("background.jpg/manager-background.jpg");
       }
+
       * {
         box-sizing: border-box;
       }
@@ -468,7 +469,7 @@
         transform: translateY(0);
         opacity: 1;
       }
-      @media (max-width: 950px) {
+      @media (max-width: 850px) {
         .sidebar {
           width: 76px;
           padding: 18px 9px;
@@ -530,7 +531,7 @@
         }
       }
 
-/* Accessibility and the supplied Java House photography layer */
+/* Legacy accessibility and supplied photography layer */
       body {
         font-size: 20px;
         letter-spacing: 0.005em;
@@ -545,7 +546,7 @@
         position: absolute;
         inset: 0;
         background: var(--manager-background-image) center/cover;
-        opacity: 1;
+        opacity: 0.16;
         pointer-events: none;
         z-index: 0;
       }
@@ -601,85 +602,85 @@
         z-index: 1;
       }
       .content {
-        font-size: 20px;
-      }
-      .crumb {
-        font-size: 18px;
-      }
-      .crumb b {
-        font-size: 28px;
-      }
-      .brand strong {
-        font-size: 18px;
-      }
-      .brand span {
         font-size: 14px;
       }
+      .crumb {
+        font-size: 12px;
+      }
+      .crumb b {
+        font-size: 20px;
+      }
+      .brand strong {
+        font-size: 15px;
+      }
+      .brand span {
+        font-size: 11px;
+      }
       .nav-btn {
-        font-size: 19px;
-        padding: 16px 14px;
+        font-size: 14px;
+        padding: 12px 14px;
       }
       .nav-label {
-        font-size: 15px;
+        font-size: 10px;
       }
       .sidebar-footer {
-        font-size: 16px;
+        font-size: 11px;
       }
       .eyebrow {
-        font-size: 15px;
+        font-size: 10px;
       }
       .date {
-        font-size: 19px;
+        font-size: 14px;
       }
       h1 {
-        font-size: 42px;
+        font-size: 29px;
       }
       h2 {
-        font-size: 27px;
+        font-size: 19px;
       }
       .stat-label {
-        font-size: 18px;
+        font-size: 12px;
       }
       .stat-value {
-        font-size: 40px;
+        font-size: 28px;
       }
       .stat-note {
-        font-size: 16px;
+        font-size: 11px;
       }
       .panel-head p {
-        font-size: 18px;
+        font-size: 12px;
       }
       .link-btn {
-        font-size: 18px;
+        font-size: 12px;
       }
       th {
-        font-size: 15px;
+        font-size: 10px;
       }
       td {
-        font-size: 18px;
-        padding: 17px 10px;
+        font-size: 12px;
+        padding: 13px 8px;
       }
       label {
-        font-size: 16px;
+        font-size: 11px;
       }
       input,
       select {
-        font-size: 19px;
-        padding: 15px;
+        font-size: 14px;
+        padding: 11px 12px;
       }
       .primary {
-        font-size: 19px;
-        padding: 15px 21px;
+        font-size: 14px;
+        padding: 12px 17px;
       }
       .quick {
-        font-size: 17px;
-        padding: 17px;
+        font-size: 14px;
+        padding: 13px;
       }
       .quick b {
-        font-size: 18px;
+        font-size: 12px;
       }
       .quick small {
-        font-size: 17px;
+        font-size: 12px;
       }
       .stat-icon,
       .stat:after,
@@ -717,7 +718,8 @@
       .ai-label { display: block; margin-bottom: 4px; color: var(--red); font-size: 12px; font-weight: 800; text-transform: uppercase; }
       .ai-form { display: flex; gap: 10px; align-items: end; }
       .ai-form .field { flex: 1; }
-      .ai-form textarea { width: 100%; min-height: 54px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: inherit; }
+       .ai-form textarea { width: 100%; min-height: 54px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: inherit; }
+
       .staff-login-form { margin-bottom: 18px; }
       @media (max-width: 650px) {
         .ai-message.user, .ai-message.assistant { margin-left: 0; margin-right: 0; }
@@ -735,9 +737,56 @@
         }
         .main:before {
           inset: 0;
-          opacity: 0.88;
+          opacity: 0.22;
         }
       }
+
+/* ========================================================================
+   FINAL DASHBOARD LAYOUT
+   Keep dashboard-wide visual adjustments in this section.
+   ======================================================================== */
+body { font-size: 14px; letter-spacing: normal; }
+.app { min-height: 100vh; display: flex; flex-direction: row; background: var(--cream); }
+.sidebar { width: 260px; min-height: 100vh; position: sticky; top: 0; }
+.main { flex: 1; min-width: 0; min-height: 100vh; background: var(--cream); }
+.main:before { background: var(--manager-background-image) center/cover; opacity: 0.16; }
+.topbar, .content { position: relative; z-index: 1; }
+.topbar { height: 78px; }
+.content { width: 100%; max-width: 1500px; margin: 0 auto; padding: 32px 42px 50px; font-size: 14px; }
+.crumb { font-size: 12px; }
+.crumb b { font-size: 20px; }
+.brand strong { font-size: 15px; }
+.brand span, .sidebar-footer { font-size: 11px; }
+.nav-btn { font-size: 14px; padding: 12px 14px; }
+.nav-label, .eyebrow { font-size: 10px; }
+.date { font-size: 14px; }
+h1 { font-size: 29px; }
+
+@media (max-width: 1100px) {
+  .sidebar { width: 230px; }
+  .content { padding: 28px 26px 42px; }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 850px) {
+  .sidebar { width: 76px; padding: 18px 9px; }
+  .brand { padding: 4px 5px 18px; }
+  .brand div, .nav-label, .nav-btn span, .sidebar-footer { display: none; }
+  .brand img { width: 48px; }
+  .nav-btn { justify-content: center; padding: 13px 5px; }
+  .nav-icon { width: auto; }
+  .content { padding: 24px 20px 38px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 650px) {
+  .topbar { height: 64px; padding: 0 16px; }
+  .top-actions .manager-login-link { display: none; }
+  .welcome { align-items: flex-start; flex-direction: column; }
+  .grid { grid-template-columns: 1fr; }
+  .content { padding: 20px 13px 35px; }
+  h1 { font-size: 25px; }
+}
 
 :root {
         --ink: #202326;
@@ -1205,7 +1254,7 @@
         transform: translateY(0);
         opacity: 1;
       }
-      @media (max-width: 950px) {
+      @media (max-width: 850px) {
         .sidebar {
           width: 76px;
           padding: 18px 9px;
@@ -1269,7 +1318,7 @@
 
 /* Accessibility and the supplied Java House photography layer */
       body {
-        font-size: 20px;
+        font-size: 14px;
         letter-spacing: 0.005em;
       }
       .main {
@@ -1282,7 +1331,7 @@
         position: absolute;
         inset: 0;
         background: var(--manager-background-image) center/cover;
-        opacity: 1;
+        opacity: 0.16;
         pointer-events: none;
         z-index: 0;
       }
@@ -1338,85 +1387,85 @@
         z-index: 1;
       }
       .content {
-        font-size: 20px;
-      }
-      .crumb {
-        font-size: 18px;
-      }
-      .crumb b {
-        font-size: 28px;
-      }
-      .brand strong {
-        font-size: 18px;
-      }
-      .brand span {
         font-size: 14px;
       }
+      .crumb {
+        font-size: 12px;
+      }
+      .crumb b {
+        font-size: 20px;
+      }
+      .brand strong {
+        font-size: 15px;
+      }
+      .brand span {
+        font-size: 11px;
+      }
       .nav-btn {
-        font-size: 19px;
-        padding: 16px 14px;
+        font-size: 14px;
+        padding: 12px 14px;
       }
       .nav-label {
-        font-size: 15px;
+        font-size: 10px;
       }
       .sidebar-footer {
-        font-size: 16px;
+        font-size: 11px;
       }
       .eyebrow {
-        font-size: 15px;
+        font-size: 10px;
       }
       .date {
-        font-size: 19px;
+        font-size: 14px;
       }
       h1 {
-        font-size: 42px;
+        font-size: 29px;
       }
       h2 {
-        font-size: 27px;
+        font-size: 19px;
       }
       .stat-label {
-        font-size: 18px;
+        font-size: 12px;
       }
       .stat-value {
-        font-size: 40px;
+        font-size: 28px;
       }
       .stat-note {
-        font-size: 16px;
+        font-size: 11px;
       }
       .panel-head p {
-        font-size: 18px;
+        font-size: 12px;
       }
       .link-btn {
-        font-size: 18px;
+        font-size: 12px;
       }
       th {
-        font-size: 15px;
+        font-size: 10px;
       }
       td {
-        font-size: 18px;
-        padding: 17px 10px;
+        font-size: 12px;
+        padding: 13px 8px;
       }
       label {
-        font-size: 16px;
+        font-size: 11px;
       }
       input,
       select {
-        font-size: 19px;
-        padding: 15px;
+        font-size: 14px;
+        padding: 11px 12px;
       }
       .primary {
-        font-size: 19px;
-        padding: 15px 21px;
+        font-size: 14px;
+        padding: 12px 17px;
       }
       .quick {
-        font-size: 17px;
-        padding: 17px;
+        font-size: 14px;
+        padding: 13px;
       }
       .quick b {
-        font-size: 18px;
+        font-size: 12px;
       }
       .quick small {
-        font-size: 17px;
+        font-size: 12px;
       }
       .stat-icon,
       .stat:after,
@@ -1451,6 +1500,6 @@
         }
         .main:before {
           inset: 0;
-          opacity: 0.88;
+          opacity: 0.22;
         }
       }
