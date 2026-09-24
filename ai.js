@@ -27,7 +27,7 @@
       <div class="ai-header"><div class="ai-orb">✦</div><div><h2>Java House assistant</h2><p>Live operations support</p></div><span class="ai-live"><i></i> Online</span></div>
       <div class="ai-suggestions"><span>Try asking</span><button type="button" data-ai-suggestion="How many rooms are available today?">Room availability</button><button type="button" data-ai-suggestion="How many bookings do we have today?">Today’s bookings</button><button type="button" data-ai-suggestion="What menu items are available?">Available menu</button></div>
       <div id="ai-messages" class="ai-messages"><div class="ai-message assistant"><div class="ai-avatar">✦</div><div><span class="ai-label">Java House AI</span><div class="ai-bubble">Hello! I can help you check rooms, bookings, tables, menu, orders, and invoices. What would you like to know?</div></div></div></div>
-      <form id="ai-form" class="ai-form"><div class="ai-input-wrap"><textarea id="ai-input" aria-label="Your question" placeholder="Ask about today’s operations…" rows="1" required></textarea><span class="ai-hint">Press Enter to send · Shift + Enter for a new line</span></div><button class="ai-send" type="submit" aria-label="Send question">➤</button></form>
+      <form id="ai-form" class="ai-form"><div class="ai-input-wrap"><textarea id="ai-input" aria-label="Your question" placeholder="" rows="1" required></textarea></div><button class="ai-send" type="submit" aria-label="Send question">➤</button></form>
     </div>`;
   document.querySelector('.content').appendChild(panel);
 
