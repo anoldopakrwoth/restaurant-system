@@ -16,6 +16,8 @@
         --green: #24835e;
         --gold: #c9922e;
         --shadow: 0 12px 35px #241f1a14;
+        /* Change this filename to replace the main dashboard background. */
+        --manager-background-image: url("background.jpg/manager-background.jpg");
       }
       * {
         box-sizing: border-box;
@@ -548,7 +550,7 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: url("background.jpg/images.jpg") center/cover;
+        background: var(--manager-background-image) center/cover;
         opacity: 1;
         pointer-events: none;
         z-index: 0;

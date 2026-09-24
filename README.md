@@ -20,6 +20,10 @@ Flask API and dashboard for rooms, bookings, customers, restaurant tables, menu 
 
 Open `index.html` in a browser after the API starts.
 
+## Change the dashboard background
+
+Replace `background.jpg/manager-background.jpg` with another image, then update the `--manager-background-image` line near the top of `index.html` (and `styles.css` if that stylesheet is used separately).
+
 ## Staff authentication
 
 Create a staff account with `POST /api/staff/register`, then log in with `POST /api/staff/login`. The login response includes a token valid for eight hours. Send it when viewing or creating customers and when using the AI assistant:
