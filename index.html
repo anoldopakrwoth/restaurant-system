@@ -1,363 +1,1963 @@
-<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hotel & Restaurant Management System</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 p-8">
-  <div class="max-w-6xl mx-auto space-y-8">
-    <div class="flex justify-between items-center border-b pb-4">
-      <h1 class="text-3xl font-bold text-gray-800">Hotel & Restaurant Management System</h1>
-      <div id="auth-status" class="flex items-center gap-3">
-        <button onclick="toggleAuthModal()" id="auth-btn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold text-sm">Staff Login</button>
-      </div>
-    </div>
-
-    <!-- 1. ROOM STATUS GRID -->
-    <div class="bg-white p-6 rounded-xl shadow-md">
-      <h2 class="text-xl font-semibold mb-4 text-blue-700">Room Management</h2>
-      <button onclick="fetchRooms()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4">Refresh Rooms</button>
-      <div id="rooms-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-    </div>
-
-    <!-- 2. INTERACTIVE RESTAURANT POS & CART -->
-    <div class="bg-white p-6 rounded-xl shadow-md">
-      <h2 class="text-xl font-semibold mb-4 text-green-700">Restaurant POS Order System</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Menu Items List -->
-        <div class="md:col-span-2">
-          <h3 class="font-bold text-gray-700 mb-2">Available Menu Items (Click to Add)</h3>
-          <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-        </div>
-        
-        <!-- Cart Sidebar -->
-        <div class="bg-gray-50 p-4 rounded-lg border">
-          <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">Order Cart</h3>
-          <div id="cart-items" class="space-y-2 text-sm max-h-48 overflow-y-auto mb-4">
-            <p class="text-gray-400 italic">No items added yet.</p>
-          </div>
-          <div class="border-t pt-2 space-y-2">
-            <div class="flex justify-between font-bold text-gray-800">
-              <span>Total:</span>
-              <span id="cart-total">$0.00</span>
-            </div>
-            <input id="pos_customer_id" type="number" placeholder="Customer ID (Optional)" class="w-full border p-2 rounded text-sm">
-            <input id="pos_room_id" type="number" placeholder="Room ID (Optional)" class="w-full border p-2 rounded text-sm">
-            <input id="pos_staff_id" type="number" placeholder="Staff ID (e.g. 1)" class="w-full border p-2 rounded text-sm" value="1">
-            <button onclick="submitPosOrder()" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 font-semibold">Submit POS Order</button>
-            <p id="pos-msg" class="text-xs font-bold mt-1"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. UNIFIED BILLING CALCULATOR -->
-    <div class="bg-white p-6 rounded-xl shadow-md">
-      <h2 class="text-xl font-semibold mb-4 text-purple-700">Guest Billing Summary</h2>
-      <div class="flex gap-4 mb-4">
-        <input id="customerIdInput" type="number" placeholder="Enter Customer ID (e.g. 1)" class="border p-2 rounded w-64">
-        <button onclick="fetchCheckoutBill()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Calculate Bill</button>
-      </div>
-      <div id="bill-result" class="text-gray-700 font-mono space-y-2"></div>
-    </div>
-
-    <!-- 4. GUEST CHECK-OUT & SETTLEMENT -->
-    <div class="bg-white p-6 rounded-xl shadow-md">
-      <h2 class="text-xl font-semibold mb-4 text-red-700">Guest Check-Out & Settlement</h2>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <input id="co_customer_id" type="number" placeholder="Customer ID" class="border p-2 rounded">
-        <input id="co_booking_id" type="number" placeholder="Booking ID" class="border p-2 rounded">
-        <input id="co_amount" type="number" step="0.01" placeholder="Amount Paid" class="border p-2 rounded">
-        <select id="co_method" class="border p-2 rounded">
-          <option value="cash">Cash</option>
-          <option value="credit_card">Credit Card</option>
-          <option value="room_charge">Room Charge</option>
-        </select>
-      </div>
-      <button onclick="processCheckout()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Process Check-Out</button>
-      <p id="checkout-message" class="mt-2 text-sm font-bold"></p>
-    </div>
-  </div>
-
-  <!-- AUTHENTICATION MODAL -->
-  <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-      <h3 class="text-xl font-bold text-gray-800 mb-4">Staff Authentication</h3>
-      <div class="space-y-4">
-        <input id="login_email" type="email" placeholder="Email (manager@hotel.com)" class="w-full border p-2 rounded">
-        <input id="login_password" type="password" placeholder="Password" class="w-full border p-2 rounded">
-        <button onclick="performLogin()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-semibold">Log In</button>
-        <button onclick="toggleAuthModal()" class="w-full bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300 font-semibold">Cancel</button>
-        <p id="login-msg" class="text-xs font-bold text-center mt-2"></p>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Update API_URL to your production server on Render once deployed
-    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:5000/api'
-      : 'https://restaurant-system-xyz.onrender.com/api'; // Replace with actual Render service URL
-
-    let cart = [];
-
-    // Helper to send Bearer token in headers for protected routes
-    async function fetchAuth(url, options = {}) {
-      const token = localStorage.getItem('jwt_token');
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Java House | Hospitality Hub</title>
+    <style>
+      :root {
+        --ink: #202326;
+        --red: #ed2947;
+        --red2: #c51c38;
+        --cream: #f7f4ef;
+        --paper: #fffdf9;
+        --muted: #7c817f;
+        --line: #e9e4dc;
+        --green: #24835e;
+        --gold: #c9922e;
+        --shadow: 0 12px 35px #241f1a14;
       }
-      return fetch(url, { ...options, headers });
-    }
-
-    function toggleAuthModal() {
-      document.getElementById('auth-modal').classList.toggle('hidden');
-    }
-
-    function updateAuthUI() {
-      const token = localStorage.getItem('jwt_token');
-      const authBtn = document.getElementById('auth-btn');
-      if (token) {
-        authBtn.className = "bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 font-semibold text-sm";
-        authBtn.innerText = "Log Out";
-        authBtn.onclick = performLogout;
-      } else {
-        authBtn.className = "bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-semibold text-sm";
-        authBtn.innerText = "Staff Login";
-        authBtn.onclick = toggleAuthModal;
+      * {
+        box-sizing: border-box;
       }
-    }
-
-    async function performLogin() {
-      const email = document.getElementById('login_email').value;
-      const password = document.getElementById('login_password').value;
-      const msg = document.getElementById('login-msg');
-
-      try {
-        const res = await fetch(`${API_URL}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        if (res.ok && data.token) {
-          localStorage.setItem('jwt_token', data.token);
-          msg.className = "text-xs font-bold text-green-600 text-center mt-2";
-          msg.innerText = "Login successful!";
-          setTimeout(() => {
-            toggleAuthModal();
-            updateAuthUI();
-          }, 500);
-        } else {
-          msg.className = "text-xs font-bold text-red-600 text-center mt-2";
-          msg.innerText = data.error || data.message || "Invalid credentials.";
+      body {
+        margin: 0;
+        background: var(--cream);
+        color: var(--ink);
+        font:
+          14px/1.5 Inter,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      .app {
+        min-height: 100vh;
+        display: flex;
+      }
+      .sidebar {
+        width: 250px;
+        background: var(--ink);
+        color: #fff;
+        padding: 24px 15px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 10px 26px;
+        border-bottom: 1px solid #ffffff1c;
+      }
+      .brand img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--red);
+        background: #fff;
+      }
+      .brand strong {
+        display: block;
+        letter-spacing: 0.18em;
+        font-size: 15px;
+      }
+      .brand span {
+        display: block;
+        color: #bfc2c1;
+        font-size: 11px;
+      }
+      .nav-label {
+        color: #777d7f;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 10px;
+        padding: 25px 14px 8px;
+      }
+      .nav-btn {
+        border: 0;
+        color: #c6c9c8;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        padding: 12px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        transition: 0.18s;
+      }
+      .nav-btn:hover {
+        background: #2b3032;
+        color: #fff;
+      }
+      .nav-btn.active {
+        background: var(--red);
+        color: #fff;
+        box-shadow: 0 8px 18px #ed294733;
+      }
+      .nav-icon {
+        width: 20px;
+        text-align: center;
+        font-size: 16px;
+      }
+      .sidebar-footer {
+        margin-top: auto;
+        color: #858b8b;
+        font-size: 11px;
+        padding: 18px 14px 0;
+        border-top: 1px solid #ffffff1a;
+      }
+      .main {
+        flex: 1;
+        min-width: 0;
+      }
+      .topbar {
+        height: 76px;
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 34px;
+      }
+      .crumb {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .crumb b {
+        color: var(--ink);
+        font-size: 20px;
+        margin-right: 10px;
+      }
+      .top-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .icon-btn {
+        background: transparent;
+        border: 1px solid var(--line);
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+      .avatar {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        background: #ffd8de;
+        color: var(--red2);
+        border-radius: 50%;
+        font-weight: 800;
+      }
+      .content {
+        padding: 30px 34px 46px;
+        max-width: 1440px;
+        margin: auto;
+      }
+      .welcome {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        margin-bottom: 26px;
+      }
+      .eyebrow {
+        color: var(--red);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 10px;
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+      h1 {
+        font-size: 29px;
+        letter-spacing: -0.04em;
+        margin: 0;
+      }
+      h2 {
+        font-size: 19px;
+        margin: 0;
+      }
+      p {
+        margin: 0;
+      }
+      .date {
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .primary {
+        border: 0;
+        background: var(--red);
+        color: #fff;
+        border-radius: 8px;
+        padding: 12px 17px;
+        cursor: pointer;
+        font-weight: 700;
+        box-shadow: 0 8px 18px #ed29472e;
+      }
+      .primary:hover {
+        background: var(--red2);
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 25px;
+      }
+      .stat,
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+      }
+      .stat {
+        padding: 19px 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .stat:after {
+        content: "";
+        position: absolute;
+        right: -18px;
+        bottom: -24px;
+        width: 75px;
+        height: 75px;
+        border-radius: 50%;
+        background: #fff0f2;
+      }
+      .stat-label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        margin: 5px 0 2px;
+        letter-spacing: -0.04em;
+      }
+      .stat-note {
+        color: var(--green);
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .stat-icon {
+        position: absolute;
+        right: 19px;
+        top: 18px;
+        font-size: 21px;
+        z-index: 1;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+      .panel {
+        padding: 22px;
+        margin-bottom: 20px;
+      }
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        gap: 10px;
+      }
+      .panel-head p {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .link-btn {
+        color: var(--red);
+        background: none;
+        border: 0;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .bar-row {
+        display: grid;
+        grid-template-columns: 86px 1fr 38px;
+        align-items: center;
+        gap: 11px;
+        margin: 13px 0;
+        font-size: 12px;
+      }
+      .bar-track {
+        height: 9px;
+        background: #f0ece6;
+        border-radius: 20px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        background: var(--red);
+        border-radius: 20px;
+      }
+      .photo-card {
+        min-height: 180px;
+        border-radius: 11px;
+        overflow: hidden;
+        color: #fff;
+        background:
+          linear-gradient(90deg, #000b, #0001),
+          url("background.jpg/images (4).jpg") center/cover;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        margin-bottom: 20px;
+      }
+      .photo-card h2 {
+        font-size: 22px;
+      }
+      .photo-card p {
+        opacity: 0.84;
+        font-size: 12px;
+      }
+      .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .quick {
+        border: 1px solid var(--line);
+        background: #fff;
+        padding: 13px;
+        border-radius: 9px;
+        cursor: pointer;
+        text-align: left;
+      }
+      .quick:hover {
+        border-color: var(--red);
+      }
+      .quick b {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+      }
+      .quick span {
+        font-size: 19px;
+      }
+      .table-wrap {
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 13px 8px;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      th {
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+      }
+      td {
+        font-size: 12px;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        text-transform: capitalize;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .status:before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      .available,
+      .confirmed,
+      .paid {
+        color: var(--green);
+      }
+      .occupied,
+      .pending {
+        color: var(--gold);
+      }
+      .maintenance,
+      .cancelled {
+        color: var(--red);
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 13px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      input,
+      select {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 8px;
+        padding: 11px 12px;
+        outline: 0;
+        color: var(--ink);
+      }
+      input:focus,
+      select:focus {
+        border-color: var(--red);
+        box-shadow: 0 0 0 3px #ffe8eb;
+      }
+      .form-actions {
+        grid-column: 1/-1;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .empty {
+        text-align: center;
+        color: var(--muted);
+        padding: 30px 10px;
+      }
+      .toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        background: var(--ink);
+        color: #fff;
+        padding: 13px 18px;
+        border-radius: 9px;
+        transform: translateY(90px);
+        opacity: 0;
+        transition: 0.25s;
+        z-index: 4;
+      }
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      @media (max-width: 950px) {
+        .sidebar {
+          width: 76px;
+          padding: 18px 9px;
         }
-      } catch (err) {
-        msg.className = "text-xs font-bold text-red-600 text-center mt-2";
-        msg.innerText = "Connection error.";
-      }
-    }
-
-    function performLogout() {
-      localStorage.removeItem('jwt_token');
-      updateAuthUI();
-    }
-
-    async function fetchRooms() {
-      try {
-        const res = await fetch(`${API_URL}/rooms`);
-        const rooms = await res.json();
-        const container = document.getElementById('rooms-grid');
-        container.innerHTML = rooms.map(r => `
-          <div class="border p-4 rounded-lg ${
-            r.status === 'available' ? 'bg-green-50 border-green-300' :
-            r.status === 'cleaning' ? 'bg-yellow-50 border-yellow-300' : 'bg-red-50 border-red-300'
-          }">
-            <p class="font-bold text-lg">Room ${r.room_number}</p>
-            <p class="text-sm text-gray-600">Type: ${r.room_type}</p>
-            <p class="text-sm text-gray-600">Price: $${r.price_per_night}/night</p>
-            <span class="inline-block mt-2 text-xs font-bold px-2 py-1 rounded uppercase ${
-              r.status === 'available' ? 'bg-green-200 text-green-800' :
-              r.status === 'cleaning' ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800'
-            }">${r.status}</span>
-          </div>
-        `).join('');
-      } catch (err) {
-        console.error('Error loading rooms:', err);
-      }
-    }
-
-    async function fetchMenu() {
-      try {
-        const res = await fetch(`${API_URL}/menu`);
-        const items = await res.json();
-        const container = document.getElementById('menu-grid');
-        container.innerHTML = items.map(m => `
-          <div onclick="addToCart(${m.item_id}, '${m.name}', ${m.price})" class="border p-3 rounded-lg bg-gray-50 hover:bg-green-50 cursor-pointer border-gray-200 hover:border-green-400 transition">
-            <p class="font-bold text-sm">${m.name}</p>
-            <p class="text-xs text-gray-500">${m.category}</p>
-            <p class="text-sm font-semibold text-green-600">$${m.price}</p>
-          </div>
-        `).join('');
-      } catch (err) {
-        console.error('Error loading menu:', err);
-      }
-    }
-
-    function addToCart(id, name, price) {
-      const existing = cart.find(item => item.menu_item_id === id);
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        cart.push({ menu_item_id: id, name, unit_price: parseFloat(price), quantity: 1 });
-      }
-      renderCart();
-    }
-
-    function renderCart() {
-      const container = document.getElementById('cart-items');
-      if (cart.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 italic">No items added yet.</p>';
-        document.getElementById('cart-total').innerText = '$0.00';
-        return;
-      }
-
-      let total = 0;
-      container.innerHTML = cart.map((item, index) => {
-        const subtotal = item.unit_price * item.quantity;
-        total += subtotal;
-        return `
-          <div class="flex justify-between items-center bg-white p-2 rounded border">
-            <div>
-              <p class="font-bold">${item.name}</p>
-              <p class="text-xs text-gray-500">$${item.unit_price} x ${item.quantity}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-green-600">$${subtotal.toFixed(2)}</span>
-              <button onclick="removeFromCart(${index})" class="text-red-500 text-xs font-bold px-1">✕</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      document.getElementById('cart-total').innerText = `$${total.toFixed(2)}`;
-    }
-
-    function removeFromCart(index) {
-      cart.splice(index, 1);
-      renderCart();
-    }
-
-    async function submitPosOrder() {
-      const msg = document.getElementById('pos-msg');
-      if (cart.length === 0) {
-        msg.className = "text-xs font-bold text-red-600 mt-1";
-        msg.innerText = "Cart is empty.";
-        return;
-      }
-
-      const payload = {
-        customer_id: parseInt(document.getElementById('pos_customer_id').value) || null,
-        room_id: parseInt(document.getElementById('pos_room_id').value) || null,
-        staff_id: parseInt(document.getElementById('pos_staff_id').value) || 1,
-        items: cart
-      };
-
-      try {
-        const res = await fetchAuth(`${API_URL}/orders`, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          msg.className = "text-xs font-bold text-green-600 mt-1";
-          msg.innerText = `Order #${data.order_id} created successfully!`;
-          cart = [];
-          renderCart();
-        } else {
-          msg.className = "text-xs font-bold text-red-600 mt-1";
-          msg.innerText = data.error || data.message || "Order submission failed.";
+        .brand {
+          padding: 4px 5px 18px;
         }
-      } catch (err) {
-        msg.className = "text-xs font-bold text-red-600 mt-1";
-        msg.innerText = "Server connection error.";
+        .brand div,
+        .nav-label,
+        .nav-btn span,
+        .sidebar-footer {
+          display: none;
+        }
+        .brand img {
+          width: 48px;
+        }
+        .nav-btn {
+          justify-content: center;
+          padding: 13px 5px;
+        }
+        .nav-icon {
+          width: auto;
+        }
+        .content {
+          padding: 24px 20px;
+        }
+        .topbar {
+          padding: 0 20px;
+        }
+        .stats {
+          grid-template-columns: repeat(2, 1fr);
+        }
       }
-    }
-
-    async function fetchCheckoutBill() {
-      const customerId = document.getElementById('customerIdInput').value || 1;
-      try {
-        const res = await fetchAuth(`${API_URL}/checkout/${customerId}`);
-        const data = await res.json();
-        
-        if (!res.ok) {
-          document.getElementById('bill-result').innerHTML = `<p class="text-red-600 font-bold">${data.message || data.error || 'Failed to fetch bill details.'}</p>`;
+      @media (max-width: 650px) {
+        .topbar {
+          height: 64px;
+        }
+        .welcome {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .stats {
+          gap: 10px;
+        }
+        .stat {
+          padding: 14px;
+        }
+        .stat-value {
+          font-size: 23px;
+        }
+        .content {
+          padding: 20px 13px 35px;
+        }
+        h1 {
+          font-size: 25px;
+        }
+      }
+    </style>
+    <style>
+      /* Accessibility and the supplied Java House photography layer */
+      body {
+        font-size: 20px;
+        letter-spacing: 0.005em;
+      }
+      .main {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+      }
+      .main:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url("background.jpg/images.jpg") center/cover;
+        opacity: 1;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .topbar {
+        background: rgba(255, 253, 249, 0.92);
+        backdrop-filter: blur(10px);
+      }
+      .staff-gate {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(32, 35, 38, 0.82);
+        backdrop-filter: blur(8px);
+      }
+      .staff-gate.hidden {
+        display: none;
+      }
+      .staff-gate-card {
+        width: min(430px, 100%);
+        overflow: hidden;
+        background: var(--paper);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 18px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+      }
+      .staff-gate-image {
+        display: block;
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+      }
+      .staff-gate-content {
+        padding: 26px;
+      }
+      .staff-gate-content h2 {
+        margin-bottom: 5px;
+      }
+      .staff-gate-content p {
+        color: var(--muted);
+        margin-bottom: 20px;
+      }
+      .staff-gate-error {
+        min-height: 20px;
+        color: var(--red);
+        font-size: 13px;
+        margin-top: 12px;
+      }
+      .main > * {
+        position: relative;
+        z-index: 1;
+      }
+      .content {
+        font-size: 20px;
+      }
+      .crumb {
+        font-size: 18px;
+      }
+      .crumb b {
+        font-size: 28px;
+      }
+      .brand strong {
+        font-size: 18px;
+      }
+      .brand span {
+        font-size: 14px;
+      }
+      .nav-btn {
+        font-size: 19px;
+        padding: 16px 14px;
+      }
+      .nav-label {
+        font-size: 15px;
+      }
+      .sidebar-footer {
+        font-size: 16px;
+      }
+      .eyebrow {
+        font-size: 15px;
+      }
+      .date {
+        font-size: 19px;
+      }
+      h1 {
+        font-size: 42px;
+      }
+      h2 {
+        font-size: 27px;
+      }
+      .stat-label {
+        font-size: 18px;
+      }
+      .stat-value {
+        font-size: 40px;
+      }
+      .stat-note {
+        font-size: 16px;
+      }
+      .panel-head p {
+        font-size: 18px;
+      }
+      .link-btn {
+        font-size: 18px;
+      }
+      th {
+        font-size: 15px;
+      }
+      td {
+        font-size: 18px;
+        padding: 17px 10px;
+      }
+      label {
+        font-size: 16px;
+      }
+      input,
+      select {
+        font-size: 19px;
+        padding: 15px;
+      }
+      .primary {
+        font-size: 19px;
+        padding: 15px 21px;
+      }
+      .quick {
+        font-size: 17px;
+        padding: 17px;
+      }
+      .quick b {
+        font-size: 18px;
+      }
+      .quick small {
+        font-size: 17px;
+      }
+      .stat-icon,
+      .stat:after,
+      .quick-grid .quick > span {
+        display: none;
+      }
+      .photo-card {
+        background-image:
+          linear-gradient(90deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.12)),
+          url("background.jpg/images (5).jpg");
+      }
+      .photo-card h2 {
+        font-size: 32px;
+      }
+      @keyframes softPhotoShift {
+        from {
+          background-position: right center;
+        }
+        to {
+          background-position: 70% center;
+        }
+      }
+      @media (max-width: 650px) {
+        h1 {
+          font-size: 29px;
+        }
+        .stat-value {
+          font-size: 27px;
+        }
+        .crumb span {
+          display: none;
+        }
+        .main:before {
+          inset: 0;
+          opacity: 0.88;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="staff-gate" id="staff-gate">
+      <div class="staff-gate-card">
+        <img class="staff-gate-image" src="background.jpg/background.jpg" alt="Java House" />
+        <div class="staff-gate-content">
+          <div class="eyebrow" id="gate-eyebrow">Staff access</div>
+          <h2 id="gate-title">Welcome to Java House</h2>
+          <p id="gate-help">Sign in with your enrolled account. Your database role controls the interface you can use.</p>
+          <form id="staff-gate-form" class="form-grid">
+            <div class="field">
+              <label for="gate-email">STAFF EMAIL</label>
+              <input id="gate-email" type="email" required autocomplete="username" />
+            </div>
+            <div class="field">
+              <label for="gate-password">PASSWORD</label>
+              <input id="gate-password" type="password" required autocomplete="current-password" />
+            </div>
+            <div class="form-actions">
+              <button class="primary" type="submit">Sign in</button>
+            </div>
+          </form>
+          <div class="staff-gate-error" id="staff-gate-error" role="alert"></div>
+        </div>
+      </div>
+    </div>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="background.jpg/images (7).jpg" alt="Java House logo" />
+          <div><strong>JAVA HOUSE</strong><span>COMFORTABLE HUB</span></div>
+        </div>
+        <div class="nav-label">Workspace</div>
+        <button class="nav-btn active" data-tab="dashboard">
+          <i class="nav-icon">⌂</i><span>Overview</span></button
+        ><button class="nav-btn" data-tab="rooms">
+          <i class="nav-icon">▦</i><span>Rooms</span></button
+        ><button class="nav-btn" data-tab="bookings">
+          <i class="nav-icon">▣</i><span>Bookings</span></button
+        ><button class="nav-btn" data-tab="tables">
+          <i class="nav-icon">◫</i><span>Restaurant tables</span></button
+        ><button class="nav-btn" data-tab="orders">
+          <i class="nav-icon">▤</i><span>POS orders</span></button
+        ><button class="nav-btn" data-tab="menu">
+          <i class="nav-icon">≡</i><span>Menu</span></button
+        ><button class="nav-btn" data-tab="customers">
+          <i class="nav-icon">♙</i><span>Customers</span></button
+        ><button class="nav-btn" data-tab="invoices">
+          <i class="nav-icon">▥</i><span>Invoices</span>
+        </button><button class="nav-btn" data-tab="staff">
+          <i class="nav-icon">♟</i><span>Staff & assignments</span>
+        </button>
+        <div class="sidebar-footer">
+          Java House · Jinja<br />All operations in one place
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <div class="crumb">
+            <b id="page-title">Overview</b><span>/ Java House operations</span>
+          </div>
+          <div class="top-actions">
+            <button class="icon-btn" title="Notifications">♢</button>
+            <a class="link-btn manager-login-link" id="manager-login-link" href="/manager">Manager login</a>
+            <div class="avatar">JAV</div>
+          </div>
+        </header>
+        <section class="content">
+          <div id="dashboard" class="tab-panel active">
+            <div class="welcome overview-details">
+              <div>
+                <div class="eyebrow">Hello!, Java Board</div>
+                <h1>Make today memorable.</h1>
+                <p class="date" id="today"></p>
+              </div>
+              <button class="primary" data-tab="bookings">
+                ＋ New booking
+              </button>
+            </div>
+            <div class="stats">
+              <div class="stat">
+                <span class="stat-icon">⌂</span>
+                <div class="stat-label">Available rooms</div>
+                <div class="stat-value" id="stat-rooms">—</div>
+                <div class="stat-note">Ready for guests</div>
+              </div>
+              <div class="stat">
+                <span class="stat-icon">◷</span>
+                <div class="stat-label">Today's bookings</div>
+                <div class="stat-value" id="stat-bookings">—</div>
+                <div class="stat-note">Live reservations</div>
+              </div>
+              <div class="stat">
+                <span class="stat-icon">◫</span>
+                <div class="stat-label">Open tables</div>
+                <div class="stat-value" id="stat-tables">—</div>
+                <div class="stat-note">Dining floor</div>
+              </div>
+              <div class="stat">
+                <span class="stat-icon">◒</span>
+                <div class="stat-label">Menu items</div>
+                <div class="stat-value" id="stat-menu">—</div>
+                <div class="stat-note">On the menu</div>
+              </div>
+              <div class="stat">
+                <span class="stat-icon">♙</span>
+                <div class="stat-label">Customers</div>
+                <div class="stat-value" id="stat-customers">—</div>
+                <div class="stat-note">Registered guests</div>
+              </div>
+            </div>
+            <div class="grid overview-details">
+              <div>
+                <div class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h2>Room availability</h2>
+                      <p>Current inventory by room type</p>
+                    </div>
+                    <button class="link-btn" data-tab="rooms">
+                      View rooms →
+                    </button>
+                  </div>
+                  <div id="room-chart">
+                    <div class="empty">Loading room overview…</div>
+                  </div>
+                </div>
+                <div class="panel">
+                  <div class="panel-head">
+                    <div>
+                      <h2>Recent guests</h2>
+                      <p>Your latest customer registrations</p>
+                    </div>
+                    <button class="link-btn" data-tab="customers">
+                      View all →
+                    </button>
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Guest</th>
+                          <th>Contact</th>
+                          <th>Joined</th>
+                        </tr>
+                      </thead>
+                      <tbody id="recent-customers"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="photo-card">
+                  <div class="eyebrow" style="color: #ffb3be">
+                    Experience Java House
+                  </div>
+                  <h2>Good food.<br />Good people.</h2>
+                  <p>Warm spaces, local flavour, effortless service.</p>
+                </div>
+                <div class="panel">
+                  <div class="panel-head"><h2>Quick actions</h2></div>
+                  <div class="quick-grid">
+                    <button class="quick" data-tab="rooms">
+                      <span>▦</span><b>Add a room</b></button
+                    ><button class="quick" data-tab="tables">
+                      <span>◫</span><b>Add a table</b></button
+                    ><button class="quick" data-tab="menu">
+                      <span>≡</span><b>Update menu</b></button
+                    ><button class="quick" data-tab="customers">
+                      <span>♙</span><b>Register guest</b>
+                    </button>
+                  </div>
+                </div>
+                <div class="panel" id="manager-activity-panel" hidden>
+                  <div class="panel-head"><h2>Today's activity</h2><button class="link-btn" type="button" id="refresh-overview">Refresh</button></div>
+                  <div id="manager-activity" class="quick-grid"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="rooms" class="tab-panel">
+            <div class="welcome">
+              <div>
+                <div class="eyebrow">Stay management</div>
+                <h1>Rooms</h1>
+                <p class="date">Keep every room ready for the next guest.</p>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Add a room</h2></div>
+              <form id="room-form" class="form-grid">
+                <div class="field">
+                  <label>ROOM NUMBER</label
+                  ><input id="room_number" placeholder="e.g. 101" required />
+                </div>
+                <div class="field">
+                  <label>ROOM TYPE</label
+                  ><select id="room_type">
+                    <option>Single</option>
+                    <option>Double</option>
+                    <option>Deluxe Suite</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>PRICE PER NIGHT</label
+                  ><input
+                    id="price_per_night"
+                    type="number"
+                    step=".01"
+                    placeholder="120000"
+                    required
+                  />
+                </div>
+                <div class="form-actions">
+                  <button class="primary">Add room</button>
+                </div>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Room inventory</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Room</th>
+                      <th>Type</th>
+                      <th>Price / night</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rooms-list"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="bookings" class="tab-panel">
+            <div class="welcome">
+              <div>
+                <div class="eyebrow">Stay management</div>
+                <h1>Bookings</h1>
+                <p class="date">Create and track guest reservations.</p>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Create a room booking</h2></div>
+              <form id="booking-form" class="form-grid">
+                <div class="field">
+                  <label>CUSTOMER</label
+                  ><select id="booking_customer_id" required>
+                    <option value="">Select customer</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>AVAILABLE ROOM</label
+                  ><select id="booking_room_id" required>
+                    <option value="">Select available room</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>CHECK IN</label
+                  ><input id="check_in" type="datetime-local" required />
+                </div>
+                <div class="field">
+                  <label>CHECK OUT</label
+                  ><input id="check_out" type="datetime-local" required />
+                </div>
+                <div class="form-actions">
+                  <button class="primary">Confirm booking</button>
+                </div>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Reservation history</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Guest</th>
+                      <th>Room</th>
+                      <th>Check in</th>
+                      <th>Check out</th>
+                      <th>Status</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bookings-list"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="orders" class="tab-panel">
+            <div class="welcome">
+              <div>
+                <div class="eyebrow">Restaurant point of sale</div>
+                <h1>New order</h1>
+                <p class="date">
+                  Tap a menu item to add it to the guest's order.
+                </p>
+              </div>
+            </div>
+            <div class="grid">
+              <div class="panel">
+                <div class="panel-head"><h2>Available menu</h2></div>
+                <div id="pos-menu" class="quick-grid"></div>
+              </div>
+              <div class="panel">
+                <div class="panel-head">
+                  <h2>Order cart</h2>
+                  <button class="link-btn" id="clear-cart">Clear</button>
+                </div>
+                <div id="cart-items" class="empty">No items added yet.</div>
+                <div
+                  style="
+                    border-top: 1px solid var(--line);
+                    margin-top: 12px;
+                    padding-top: 14px;
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-weight: 800;
+                      margin-bottom: 12px;
+                    "
+                  >
+                    <span>Total</span><span id="cart-total">UGX 0</span>
+                  </div>
+                  <form id="order-form" class="form-grid">
+                    <div class="field">
+                      <label>CUSTOMER (OPTIONAL)</label
+                      ><select id="pos_customer_id">
+                        <option value="">Walk-in customer</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>TABLE (OPTIONAL)</label
+                      ><select id="pos_table_id">
+                        <option value="">Select table</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>ROOM (OPTIONAL)</label
+                      ><select id="pos_room_id">
+                        <option value="">Select room</option>
+                      </select>
+                    </div>
+                    <div class="form-actions">
+                      <button class="primary">Place order</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Order history</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Customer</th>
+                      <th>Table</th>
+                      <th>Room</th>
+                      <th>Status</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orders-list"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="tables" class="tab-panel">
+            <div class="welcome">
+              <div>
+                <div class="eyebrow">Restaurant</div>
+                <h1>Dining tables</h1>
+                <p class="date">Know your floor at a glance.</p>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Add restaurant table</h2></div>
+              <form id="table-form" class="form-grid">
+                <div class="field">
+                  <label>TABLE NUMBER</label
+                  ><input id="table_number" placeholder="e.g. T-1" required />
+                </div>
+                <div class="field">
+                  <label>SEATING CAPACITY</label
+                  ><input
+                    id="capacity"
+                    type="number"
+                    placeholder="4"
+                    required
+                  />
+                </div>
+                <div class="form-actions">
+                  <button class="primary">Add table</button>
+                </div>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Dining floor</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Table</th>
+                      <th>Capacity</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tables-list"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="menu" class="tab-panel">
+            <div class="welcome">
+              <div>
+                <div class="eyebrow">Restaurant</div>
+                <h1>Menu</h1>
+                <p class="date">
+                  Keep your best sellers visible and available.
+                </p>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Add menu item</h2></div>
+              <form id="menu-form" class="form-grid">
+                <div class="field">
+                  <label>ITEM NAME</label
+                  ><input id="menu_name" placeholder="Chicken tikka" required />
+                </div>
+                <div class="field">
+                  <label>CATEGORY</label
+                  ><input
+                    id="category"
+                    placeholder="Main, beverage, dessert"
+                    required
+                  />
+                </div>
+                <div class="field">
+                  <label>PRICE</label
+                  ><input
+                    id="menu_price"
+                    type="number"
+                    step=".01"
+                    placeholder="25000"
+                    required
+                  />
+                </div>
+                <div class="form-actions">
+                  <button class="primary">Add menu item</button>
+                </div>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Restaurant menu</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="menu-list"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="customers" class="tab-panel">
+            <div class="welcome">
+              <div>
+                <div class="eyebrow">Guest relations</div>
+                <h1>Customers</h1>
+                <p class="date">Build relationships that bring guests back.</p>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Register a customer</h2></div>
+              <form id="customer-form" class="form-grid">
+                <div class="field">
+                  <label>FIRST NAME</label><input id="first_name" required />
+                </div>
+                <div class="field">
+                  <label>LAST NAME</label><input id="last_name" required />
+                </div>
+                <div class="field">
+                  <label>PHONE</label><input id="phone" />
+                </div>
+                <div class="field">
+                  <label>EMAIL</label><input id="email" type="email" />
+                </div>
+                <div class="form-actions">
+                  <button class="primary">Register customer</button>
+                </div>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Registered customers</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Phone</th>
+                      <th>Email</th>
+                    </tr>
+                  </thead>
+                  <tbody id="customers-list"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="invoices" class="tab-panel">
+            <div class="welcome">
+              <div>
+                <div class="eyebrow">Finance</div>
+                <h1>Invoices</h1>
+                <p class="date">Close the loop on every stay and meal.</p>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Generate invoice</h2></div>
+              <form id="invoice-form" class="form-grid">
+                <div class="field">
+                  <label>CUSTOMER ID</label
+                  ><input id="invoice_customer_id" type="number" required />
+                </div>
+                <div class="field">
+                  <label>BOOKING ID (OPTIONAL)</label
+                  ><input id="invoice_booking_id" type="number" />
+                </div>
+                <div class="field">
+                  <label>GRAND TOTAL</label
+                  ><input id="grand_total" type="number" step=".01" required />
+                </div>
+                <div class="field">
+                  <label>PAYMENT METHOD</label
+                  ><select id="payment_method">
+                    <option value="cash">Cash</option>
+                    <option value="mobile_money">Mobile money</option>
+                    <option value="credit_card">Credit card</option>
+                  </select>
+                </div>
+                <div class="form-actions">
+                  <button class="primary">Settle invoice</button>
+                </div>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Invoice history</h2></div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Customer</th>
+                      <th>Booking</th>
+                      <th>Total</th>
+                      <th>Payment</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody id="invoices-list"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div id="staff" class="tab-panel">
+            <div class="welcome">
+              <div>
+                <div class="eyebrow">Manager controls</div>
+                <h1>Staff & assignments</h1>
+                <p class="date">Assign each person to the work they are responsible for.</p>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Assign a user</h2></div>
+              <form id="staff-form" class="form-grid">
+                <div class="field"><label>FULL NAME</label><input id="staff_name" required /></div>
+                <div class="field"><label>EMAIL</label><input id="staff_email" type="email" required /></div>
+                <div class="field"><label>TEMPORARY PASSWORD</label><input id="staff_password" type="password" required /></div>
+                <div class="field"><label>WORK AREA</label><select id="staff_role">
+                  <option value="receptionist">Receptionist — rooms, bookings, customers</option>
+                  <option value="restaurant">Restaurant — tables, menu, orders</option>
+                  <option value="cashier">Cashier — orders and invoices</option>
+                  <option value="housekeeping">Housekeeping — room status</option>
+                  <option value="manager">Manager — all operations and staff</option>
+                </select></div>
+                <div class="form-actions"><button class="primary">Create assigned user</button></div>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h2>Current users</h2><button class="link-btn" type="button" id="refresh-staff">Refresh from database</button></div>
+              <div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Assignment</th><th>Features</th><th>Actions</th></tr></thead><tbody id="staff-list"></tbody></table></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script>
+      // Change this URL when the API is deployed to another server.
+      // Use the local Flask API when this file is opened directly; use the
+      // same-origin API when Flask serves the dashboard online.
+      window.API_BASE_URL =
+        window.location.protocol === "file:"
+          ? "http://127.0.0.1:5000/api"
+          : "/api";
+    </script>
+    <script src="ai.js"></script>
+    <script>
+      const API = window.API_BASE_URL || `${window.location.origin}/api`,
+        money = (n) => `UGX ${Number(n || 0).toLocaleString()}`,
+        toast = (m) => {
+          let t = document.getElementById("toast");
+          t.textContent = m;
+          t.classList.add("show");
+          setTimeout(() => t.classList.remove("show"), 2600);
+        },
+        api = async (p, o) => {
+          try {
+            let r = await fetch(API + p, o);
+            if (!r.ok) {
+              const error = await r.json().catch(() => ({}));
+              if (r.status === 401) {
+                localStorage.removeItem("java_house_staff_token");
+                staffGate.classList.remove("hidden");
+                staffGateError.textContent =
+                  error.error || "Please sign in again.";
+              } else if (o && ["POST", "PUT", "DELETE"].includes(o.method)) {
+                toast(error.error || `Request failed (${r.status}).`);
+              }
+              throw Error(error.error || `Request failed (${r.status}).`);
+            }
+            return await r.json();
+          } catch (e) {
+            if (e.message && !e.message.startsWith("Request failed")) {
+              if (o && o.method === "POST") {
+                toast("The API is unavailable. Please try again.");
+              }
+            }
+            return null;
+          }
+        },
+        empty = (id, m = "No records yet") =>
+          (document.getElementById(id).innerHTML =
+            `<tr><td colspan="8" class="empty">${m}</td></tr>`);
+      function setSelectOptions(id, items, value, label, placeholder) {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.replaceChildren(new Option(placeholder, ""));
+        items.forEach((item) => {
+          select.add(new Option(label(item), String(value(item))));
+        });
+      }
+      const staffGate = document.getElementById("staff-gate");
+      const staffGateForm = document.getElementById("staff-gate-form");
+      const staffGateError = document.getElementById("staff-gate-error");
+      const managerMode = window.location.pathname.toLowerCase() === "/manager";
+      if (managerMode) {
+        document.getElementById("gate-eyebrow").textContent = "Manager access";
+        document.getElementById("gate-title").textContent = "Manager login";
+        document.getElementById("gate-help").textContent = "Sign in to manage all hotel and restaurant operations.";
+      }
+      let currentStaff = null;
+      function applyRoleAccess(staff) {
+        currentStaff = staff;
+        const features = new Set(staff.features || ["dashboard"]);
+        const isManager = ["admin", "manager"].includes((staff.role || "").toLowerCase());
+        document.querySelectorAll(".nav-btn[data-tab]").forEach((button) => {
+          button.hidden = !features.has(button.dataset.tab);
+        });
+        document.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.hidden = !features.has(panel.id);
+        });
+        document.querySelectorAll(".overview-details").forEach((section) => {
+          section.hidden = !isManager;
+        });
+        document.getElementById("manager-login-link").hidden = isManager;
+        if (!features.has("dashboard")) {
+          document.querySelector('.nav-btn[data-tab="dashboard"]')?.remove();
+        }
+        document.querySelector(".avatar").textContent =
+          (staff.name || staff.role || "STAFF").slice(0, 3).toUpperCase();
+        document.querySelector(".eyebrow").textContent =
+          `Signed in as ${staff.name || staff.role}`;
+      }
+      async function verifyStaffSession() {
+        const token = localStorage.getItem("java_house_staff_token");
+        if (!token) return;
+        try {
+          const response = await fetch(`${API}/staff/me`);
+          if (response.ok) {
+            currentStaff = await response.json();
+            if (managerMode && !["admin", "manager"].includes((currentStaff.role || "").toLowerCase())) {
+              localStorage.removeItem("java_house_staff_token");
+              staffGateError.textContent = "This page is only for manager accounts.";
+              return;
+            }
+            applyRoleAccess(currentStaff);
+            staffGate.classList.add("hidden");
+            loadManagerOverview();
+            return;
+          }
+        } catch (error) {
+          staffGateError.textContent = "The server is unavailable.";
           return;
         }
-
-        document.getElementById('co_customer_id').value = data.customer_id;
-        document.getElementById('co_booking_id').value = data.booking_id || '';
-        document.getElementById('co_amount').value = data.grand_total ? data.grand_total.toFixed(2) : '0.00';
-
-        document.getElementById('bill-result').innerHTML = `
-          <p>Customer ID: <strong>${data.customer_id}</strong></p>
-          <p>Room Stay Subtotal: $${(data.room_total || 0).toFixed(2)}</p>
-          <p>Dining Subtotal: $${(data.dining_total || 0).toFixed(2)}</p>
-          <hr class="my-2">
-          <p class="text-lg font-bold text-black">Grand Total Due: $${(data.grand_total || 0).toFixed(2)}</p>
-        `;
-      } catch (err) {
-        console.error('Error fetching bill:', err);
+        localStorage.removeItem("java_house_staff_token");
       }
-    }
-
-    async function processCheckout() {
-      const customer_id = parseInt(document.getElementById('co_customer_id').value);
-      const booking_id = parseInt(document.getElementById('co_booking_id').value);
-      const amount_paid = parseFloat(document.getElementById('co_amount').value);
-      const payment_method = document.getElementById('co_method').value;
-
-      const msgEl = document.getElementById('checkout-message');
-
-      if (!customer_id || !booking_id || isNaN(amount_paid)) {
-        msgEl.className = "mt-2 text-sm font-bold text-red-600";
-        msgEl.innerText = "Please fill in Customer ID, Booking ID, and Amount Paid.";
-        return;
-      }
-
-      try {
-        const res = await fetchAuth(`${API_URL}/checkout`, {
-          method: 'POST',
-          body: JSON.stringify({ customer_id, booking_id, amount_paid, payment_method })
+      staffGateForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        staffGateError.textContent = "";
+        const response = await fetch(`${API}/staff/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: document.getElementById("gate-email").value,
+            password: document.getElementById("gate-password").value,
+            ...(managerMode ? { login_as: "manager" } : {}),
+          }),
         });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          msgEl.className = "mt-2 text-sm font-bold text-green-600";
-          msgEl.innerText = data.message || 'Check-out completed successfully.';
-          fetchRooms();
-        } else {
-          msgEl.className = "mt-2 text-sm font-bold text-red-600";
-          msgEl.innerText = data.error || data.message || 'Check-out failed.';
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          staffGateError.textContent = data.error || "Invalid email or password.";
+          return;
         }
-      } catch (err) {
-        msgEl.className = "mt-2 text-sm font-bold text-red-600";
-        msgEl.innerText = 'Server error during check-out.';
+        localStorage.setItem("java_house_staff_token", data.token);
+        applyRoleAccess(data);
+        staffGate.classList.add("hidden");
+        window.dispatchEvent(new CustomEvent("java-house-authenticated"));
+      });
+      verifyStaffSession();
+      function openTab(id) {
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((x) => x.classList.toggle("active", x.id === id));
+        document
+          .querySelectorAll(".nav-btn")
+          .forEach((x) => x.classList.toggle("active", x.dataset.tab === id));
+        document.getElementById("page-title").textContent =
+          id[0].toUpperCase() + id.slice(1);
+        if (id === "rooms") loadRooms();
+        if (id === "bookings") loadBookings();
+        if (id === "tables") loadTables();
+        if (id === "orders") {
+          loadPos();
+          loadOrders();
+        }
+        if (id === "menu") loadMenu();
+        if (id === "customers") loadCustomers();
+        if (id === "invoices") loadInvoices();
+        if (id === "staff") loadStaff();
       }
-    }
-
-    // Initialize UI and data loads
-    updateAuthUI();
-    fetchRooms();
-    fetchMenu();
-  </script>
-</body>
+      document.addEventListener("click", (e) => {
+        let b = e.target.closest("[data-tab]");
+        if (b) openTab(b.dataset.tab);
+      });
+      document.getElementById("today").textContent = new Intl.DateTimeFormat(
+        "en-UG",
+        { weekday: "long", day: "numeric", month: "long", year: "numeric" },
+      ).format(new Date());
+      async function loadRooms() {
+        let d = await api("/rooms");
+        if (!d) {
+          empty("rooms-list", "Connect the API to load rooms");
+          return;
+        }
+        document.getElementById("stat-rooms").textContent =
+          `${d.filter((x) => x.status === "available").length}/${d.length}`;
+        setSelectOptions(
+          "booking_room_id",
+          d.filter((x) => x.status === "available"),
+          (x) => x.room_id,
+          (x) => `Room ${x.room_number} - ${x.room_type} (${money(x.price_per_night)})`,
+          "Select available room",
+        );
+        setSelectOptions(
+          "pos_room_id",
+          d,
+          (x) => x.room_id,
+          (x) => `Room ${x.room_number} - ${x.room_type} (${x.status})`,
+          "Select room",
+        );
+        document.getElementById("room-chart").innerHTML = [
+          "Single",
+          "Double",
+          "Deluxe Suite",
+        ]
+          .map((t) => {
+            let n = d.filter((x) => x.room_type === t).length,
+              p = d.length ? Math.max(8, (n / d.length) * 100) : 8;
+            return `<div class="bar-row"><span>${t}</span><div class="bar-track"><div class="bar-fill" style="width:${p}%"></div></div><b>${n}</b></div>`;
+          })
+          .join("");
+        document.getElementById("rooms-list").innerHTML =
+          d
+            .map(
+              (x) =>
+                `<tr><td>${x.room_id}</td><td><b>${x.room_number}</b></td><td>${x.room_type}</td><td>${money(x.price_per_night)}</td><td><span class="status ${x.status}">${x.status}</span></td><td><button class="link-btn" data-edit-type="room" data-id="${x.room_id}">Edit</button> <button class="link-btn" data-delete-type="room" data-id="${x.room_id}">Delete</button></td></tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="5" class="empty">Add your first room.</td></tr>';
+      }
+      async function loadTables() {
+        let d = await api("/tables");
+        if (!d) {
+          empty("tables-list", "No tables available.");
+          return;
+        }
+        document.getElementById("stat-tables").textContent = d.filter(
+          (x) => x.status === "available",
+        ).length;
+        setSelectOptions(
+          "pos_table_id",
+          d,
+          (x) => x.table_id,
+          (x) => `Table ${x.table_number} - ${x.capacity} seats (${x.status})`,
+          "Select table",
+        );
+        document.getElementById("tables-list").innerHTML =
+          d
+            .map(
+              (x) =>
+                `<tr><td>${x.table_id}</td><td><b>${x.table_number}</b></td><td>${x.capacity} guests</td><td><span class="status ${x.status}">${x.status}</span></td><td><button class="link-btn" data-edit-type="table" data-id="${x.table_id}">Edit</button> <button class="link-btn" data-delete-type="table" data-id="${x.table_id}">Delete</button></td></tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="4" class="empty">Add your first table.</td></tr>';
+      }
+      async function loadMenu() {
+        let d = await api("/menu");
+        if (!d) {
+          empty("menu-list", "No menu items available.");
+          return;
+        }
+        document.getElementById("stat-menu").textContent = d.length;
+        document.getElementById("menu-list").innerHTML =
+          d
+            .map(
+              (x) =>
+                `<tr><td>${x.menu_item_id}</td><td><b>${x.name}</b></td><td>${x.category}</td><td>${money(x.price)}</td><td><span class="status ${x.is_available ? "available" : "cancelled"}">${x.is_available ? "available" : "unavailable"}</span></td><td><button class="link-btn" data-edit-type="menu" data-id="${x.menu_item_id}">Edit</button> <button class="link-btn" data-delete-type="menu" data-id="${x.menu_item_id}">Delete</button></td></tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="5" class="empty">Add your first menu item.</td></tr>';
+      }
+      async function loadCustomers() {
+        let d = await api("/customers");
+        if (!d) {
+          empty("customers-list", "No customers available.");
+          return;
+        }
+        document.getElementById("stat-customers").textContent = d.length;
+        setSelectOptions(
+          "booking_customer_id",
+          d,
+          (x) => x.customer_id,
+          (x) => `${x.first_name} ${x.last_name}${x.phone ? ` - ${x.phone}` : ""}`,
+          "Select customer",
+        );
+        setSelectOptions(
+          "pos_customer_id",
+          d,
+          (x) => x.customer_id,
+          (x) => `${x.first_name} ${x.last_name}${x.phone ? ` - ${x.phone}` : ""}`,
+          "Walk-in customer",
+        );
+        document.getElementById("recent-customers").innerHTML =
+          d
+            .slice(-5)
+            .reverse()
+            .map(
+              (x) =>
+                `<tr><td><b>${x.first_name} ${x.last_name}</b></td><td>${x.phone || x.email || "—"}</td><td>Recently</td></tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="3" class="empty">No guests registered.</td></tr>';
+        document.getElementById("customers-list").innerHTML =
+          d
+            .map(
+              (x) =>
+                `<tr><td>${x.customer_id}</td><td><b>${x.first_name} ${x.last_name}</b></td><td>${x.phone || "—"}</td><td>${x.email || "—"}</td><td><button class="link-btn" data-edit-type="customer" data-id="${x.customer_id}">Edit</button> <button class="link-btn" data-delete-type="customer" data-id="${x.customer_id}">Delete</button></td></tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="4" class="empty">Register your first customer.</td></tr>';
+      }
+      async function loadBookings() {
+        let d = await api("/bookings");
+        if (!d) {
+          empty("bookings-list", "No bookings available.");
+          return;
+        }
+        document.getElementById("stat-bookings").textContent = d.filter(
+          (x) => x.booking_status === "confirmed",
+        ).length;
+        document.getElementById("bookings-list").innerHTML =
+          d
+            .map(
+              (x) =>
+                `<tr><td>${x.booking_id}</td><td>Customer</td><td>Room</td><td>${new Date(x.check_in).toLocaleDateString()}</td><td>${new Date(x.check_out).toLocaleDateString()}</td><td><span class="status ${x.booking_status}">${x.booking_status.replace("_", " ")}</span></td><td>${money(x.total_price)}</td><td><button class="link-btn" data-edit-type="booking" data-id="${x.booking_id}">Edit</button> <button class="link-btn" data-delete-type="booking" data-id="${x.booking_id}">Delete</button></td></tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="7" class="empty">Create your first booking.</td></tr>';
+      }
+      async function loadOrders() {
+        let d = await api("/orders");
+        if (!d) {
+          empty("orders-list", "No orders available.");
+          return;
+        }
+        document.getElementById("orders-list").innerHTML =
+          d
+            .map(
+              (x) =>
+                `<tr><td>${x.order_id}</td><td>${x.customer_id ? "Customer" : "Walk-in"}</td><td>${x.table_id ? "Table" : "—"}</td><td>${x.room_id ? "Room" : "—"}</td><td><span class="status ${x.order_status}">${x.order_status}</span></td><td>${new Date(x.order_time).toLocaleString()}</td><td><button class="link-btn" data-edit-type="order" data-id="${x.order_id}">Edit</button> <button class="link-btn" data-delete-type="order" data-id="${x.order_id}">Delete</button></td></tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="6" class="empty">No orders yet.</td></tr>';
+      }
+      async function loadInvoices() {
+        let d = await api("/invoices");
+        if (!d) {
+          empty("invoices-list", "No invoices available.");
+          return;
+        }
+        document.getElementById("invoices-list").innerHTML =
+          d
+            .map(
+              (x) =>
+                `<tr><td>${x.invoice_id}</td><td>Customer</td><td>${x.booking_id || "—"}</td><td>${money(x.grand_total)}</td><td>${(x.payment_method || "—").replace("_", " ")}</td><td><span class="status ${x.payment_status}">${x.payment_status}</span></td><td>${new Date(x.created_at).toLocaleDateString()}</td><td><button class="link-btn" data-edit-type="invoice" data-id="${x.invoice_id}">Edit</button> <button class="link-btn" data-delete-type="invoice" data-id="${x.invoice_id}">Delete</button></td></tr>`,
+            )
+            .join("") ||
+          '<tr><td colspan="7" class="empty">No invoices yet.</td></tr>';
+      }
+      async function loadStaff() {
+        const data = await api("/staff");
+        if (!data) return;
+        document.getElementById("staff-list").innerHTML = data.map((x) =>
+          `<tr><td>${x.staff_id}</td><td><b>${x.name}</b></td><td>${x.email}</td><td>${x.role}</td><td>${x.features.filter((f) => f !== "dashboard").join(", ")}</td><td><button class="link-btn" data-staff-edit="${x.staff_id}" data-staff-name="${x.name}" data-staff-role="${x.role}">Edit</button> <button class="link-btn" data-staff-delete="${x.staff_id}">Delete</button></td></tr>`
+        ).join("") || '<tr><td colspan="6" class="empty">No assigned users yet.</td></tr>';
+      }
+      async function loadManagerOverview() {
+        if (!currentStaff || !["admin", "manager"].includes((currentStaff.role || "").toLowerCase())) return;
+        const data = await api("/manager/overview");
+        if (!data) return;
+        document.getElementById("manager-activity-panel").hidden = false;
+        document.getElementById("manager-activity").innerHTML = Object.entries({
+          "Bookings today": data.today.bookings,
+          "Orders today": data.today.orders,
+          "Invoices today": data.today.invoices,
+          "New customers": data.today.new_customers,
+          "Total staff": data.totals.staff,
+        }).map(([label, value]) => `<div class="quick"><b>${label}</b><strong>${value}</strong></div>`).join("");
+      }
+      async function loadGeneralOverview() {
+        const data = await api("/overview");
+        if (!data) return;
+        document.getElementById("stat-rooms").textContent = `${data.available_rooms}/${data.total_rooms}`;
+        document.getElementById("stat-bookings").textContent = data.today_bookings;
+        document.getElementById("stat-tables").textContent = data.open_tables;
+        document.getElementById("stat-menu").textContent = data.menu_items;
+        document.getElementById("stat-customers").textContent = data.customers;
+      }
+      document.getElementById("refresh-overview").addEventListener("click", loadManagerOverview);
+      document.getElementById("refresh-staff").addEventListener("click", loadStaff);
+      document.getElementById("staff-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const result = await api("/staff", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: staff_name.value,
+            email: staff_email.value,
+            password: staff_password.value,
+            role: staff_role.value,
+          }),
+        });
+        if (result) { event.target.reset(); toast("User assigned successfully"); loadStaff(); }
+      });
+      function managerDeleteCredentials() {
+        if (!currentStaff || !["admin", "manager"].includes((currentStaff.role || "").toLowerCase())) {
+          toast("Only a manager can delete records.");
+          return null;
+        }
+        const email = prompt("Manager email confirmation:");
+        if (!email) return null;
+        const password = prompt("Manager password confirmation:");
+        if (!password) return null;
+        return { manager_email: email, manager_password: password };
+      }
+      document.addEventListener("click", async (event) => {
+        const staffDelete = event.target.closest("[data-staff-delete]");
+        if (staffDelete && confirm("Delete this staff account from the database?")) {
+          const confirmation = managerDeleteCredentials();
+          if (confirmation && await api(`/staff/${staffDelete.dataset.staffDelete}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify(confirmation) })) { toast("Staff account deleted"); loadStaff(); }
+          return;
+        }
+        const staffEdit = event.target.closest("[data-staff-edit]");
+        if (staffEdit) {
+          const name = prompt("User name:", staffEdit.dataset.staffName);
+          const role = prompt("Role (manager, receptionist, restaurant, cashier, housekeeping):", staffEdit.dataset.staffRole);
+          if (name && role && await api(`/staff/${staffEdit.dataset.staffEdit}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, role }) })) { toast("Assignment updated"); loadStaff(); }
+          return;
+        }
+        const deleteButton = event.target.closest("[data-delete-type]");
+        if (deleteButton && confirm("Delete this record from the database?")) {
+          const type = deleteButton.dataset.deleteType;
+          const confirmation = managerDeleteCredentials();
+          if (confirmation && await api(`/${type === "menu" ? "menu" : `${type}s`}/${deleteButton.dataset.id}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify(confirmation) })) {
+            toast("Record deleted");
+            ({ room: loadRooms, table: loadTables, menu: loadMenu, customer: loadCustomers, booking: loadBookings, order: loadOrders, invoice: loadInvoices }[type] || (() => {}))();
+          }
+          return;
+        }
+        const editButton = event.target.closest("[data-edit-type]");
+        if (!editButton) return;
+        const type = editButton.dataset.editType;
+        const id = editButton.dataset.id;
+        let payload = {};
+        if (type === "room") payload = { status: prompt("Room status (available, occupied, maintenance):", "available") };
+        if (type === "table") payload = { status: prompt("Table status (available, occupied, reserved):", "available") };
+        if (type === "menu") payload = { is_available: confirm("Should this menu item be available?") };
+        if (type === "booking") payload = { booking_status: prompt("Booking status (confirmed, checked_in, completed, cancelled):", "confirmed") };
+        if (type === "order") payload = { order_status: prompt("Order status (pending, served, paid, cancelled):", "pending") };
+        if (type === "invoice") payload = { payment_status: prompt("Payment status (pending, paid, failed):", "paid") };
+        if (type === "customer") payload = { phone: prompt("Customer phone:", "") };
+        if (Object.values(payload).some((value) => value === null || value === "")) return;
+        if (await api(`/${type === "menu" ? "menu" : `${type}s`}/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })) {
+          toast("Record updated in the database");
+          ({ room: loadRooms, table: loadTables, menu: loadMenu, customer: loadCustomers, booking: loadBookings, order: loadOrders, invoice: loadInvoices }[type] || (() => {}))();
+        }
+      });
+      let cart = [];
+      async function loadPos() {
+        let d = await api("/menu");
+        if (!d) {
+          document.getElementById("pos-menu").innerHTML =
+            '<div class="empty">No menu items available.</div>';
+          return;
+        }
+        document.getElementById("pos-menu").innerHTML =
+          d
+            .filter((x) => x.is_available)
+            .map(
+              (x) =>
+                `<button class="quick" data-add="${x.menu_item_id}" data-name="${x.name}" data-price="${x.price}"><span>＋</span><b>${x.name}</b><small>${money(x.price)}</small></button>`,
+            )
+            .join("") || '<div class="empty">Add menu items first.</div>';
+      }
+      function renderCart() {
+        let box = document.getElementById("cart-items");
+        if (!cart.length) {
+          box.className = "empty";
+          box.textContent = "No items added yet.";
+        } else {
+          box.className = "";
+          box.innerHTML = cart
+            .map(
+              (x, i) =>
+                `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span>${x.name} × ${x.quantity}</span><b>${money(x.price * x.quantity)} <button type="button" class="link-btn" data-remove="${i}">×</button></b></div>`,
+            )
+            .join("");
+        }
+        document.getElementById("cart-total").textContent = money(
+          cart.reduce((a, x) => a + x.price * x.quantity, 0),
+        );
+      }
+      document.addEventListener("click", (e) => {
+        let a = e.target.closest("[data-add]");
+        if (a) {
+          let x = cart.find((x) => x.id == a.dataset.add);
+          if (x) x.quantity++;
+          else
+            cart.push({
+              id: +a.dataset.add,
+              name: a.dataset.name,
+              price: +a.dataset.price,
+              quantity: 1,
+            });
+          renderCart();
+        }
+        let rm = e.target.closest("[data-remove]");
+        if (rm) {
+          cart.splice(+rm.dataset.remove, 1);
+          renderCart();
+        }
+        if (e.target.id === "clear-cart") {
+          cart = [];
+          renderCart();
+        }
+      });
+      function form(id, path, payload, msg, after) {
+        document.getElementById(id).addEventListener("submit", async (e) => {
+          e.preventDefault();
+          let r = await api(path, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload()),
+          });
+          if (!r) return;
+          e.target.reset();
+          toast(msg);
+          if (after) after();
+        });
+      }
+      form(
+        "room-form",
+        "/rooms",
+        () => ({
+          room_number: room_number.value,
+          room_type: room_type.value,
+          price_per_night: +price_per_night.value,
+        }),
+        "Room added",
+        loadRooms,
+      );
+      form(
+        "table-form",
+        "/tables",
+        () => ({ table_number: table_number.value, capacity: +capacity.value }),
+        "Table added",
+        loadTables,
+      );
+      form(
+        "menu-form",
+        "/menu",
+        () => ({
+          name: menu_name.value,
+          category: category.value,
+          price: +menu_price.value,
+        }),
+        "Menu item added",
+        loadMenu,
+      );
+      form(
+        "customer-form",
+        "/customers",
+        () => ({
+          first_name: first_name.value,
+          last_name: last_name.value,
+          phone: phone.value,
+          email: email.value,
+        }),
+        "Customer registered",
+        loadCustomers,
+      );
+      form(
+        "booking-form",
+        "/bookings",
+        () => ({
+          customer_id: +booking_customer_id.value,
+          room_id: +booking_room_id.value,
+          check_in: check_in.value,
+          check_out: check_out.value,
+        }),
+        "Booking confirmed",
+        () => {
+          loadBookings();
+          loadRooms();
+        },
+      );
+      form(
+        "invoice-form",
+        "/invoices",
+        () => ({
+          customer_id: +invoice_customer_id.value,
+          booking_id: invoice_booking_id.value
+            ? +invoice_booking_id.value
+            : null,
+          grand_total: +grand_total.value,
+          payment_method: payment_method.value,
+        }),
+        "Invoice settled",
+        loadInvoices,
+      );
+      document
+        .getElementById("order-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          if (!cart.length) {
+            toast("Add at least one item first");
+            return;
+          }
+          let r = await api("/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customer_id: pos_customer_id.value
+                ? +pos_customer_id.value
+                : null,
+              table_id: pos_table_id.value ? +pos_table_id.value : null,
+              room_id: pos_room_id.value ? +pos_room_id.value : null,
+              staff_id: 1,
+              items: cart.map((x) => ({
+                menu_item_id: x.id,
+                quantity: x.quantity,
+                unit_price: x.price,
+              })),
+            }),
+          });
+          if (!r) {
+            toast("Could not place order. Is the API running?");
+            return;
+          }
+          cart = [];
+          renderCart();
+          e.target.reset();
+          loadOrders();
+          loadTables();
+          toast("Order placed successfully");
+        });
+      function loadDashboardData() {
+        return Promise.all([
+          loadRooms(),
+          loadTables(),
+          loadMenu(),
+          loadCustomers(),
+          loadBookings(),
+          loadGeneralOverview(),
+          loadManagerOverview(),
+        ]);
+      }
+      window.addEventListener("java-house-authenticated", loadDashboardData);
+      loadDashboardData();
+    </script>
+  </body>
 </html>

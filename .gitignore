@@ -1,2 +1,8 @@
-node_modules
 .env
+.venv/
+.venv-*/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+backups/
+node_modules/
